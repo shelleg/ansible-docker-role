@@ -1,0 +1,7 @@
+---
+  - name: restart docker daemon
+    service: name=docker state=restarted enabled=yes
+    
+  - name: update ca certificates
+    command: update-ca-certificates
+    notify: restart docker daemon
