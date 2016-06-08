@@ -1,2 +1,5 @@
 ---
 # defaults file for docker-host
+  docker_engine_version: "1.10.2"
+  is_cluster_node: False
+  docker_engine_port: "2375"

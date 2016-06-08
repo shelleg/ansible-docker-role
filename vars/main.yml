@@ -1,7 +1,4 @@
 ---
-  docker_engine_version: "1.10.2"
   private_registry_host: "registry.ea.lab"
-  docker_engine_port: "2375"
-  consul_server: consul1.ea.lab
-  consul_port: 8500
-  consul_cluster_path: test/cluster
+  is_cluster_node: True
+  cluster_store_url: "consul://consul1.ea.lab:8500/test/cluster"
