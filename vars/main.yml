@@ -1,4 +1,0 @@
----
-  private_registry_host: "registry.ea.lab"
-  is_cluster_node: True
-  cluster_store_url: "consul://consul1.ea.lab:8500/test/cluster"
