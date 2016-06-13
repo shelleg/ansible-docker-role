@@ -4,10 +4,10 @@
 
   - name: enable ssh server in firewall
     ufw: rule=allow name=OpenSSH
-
-  - name: enable docker in firewall
+    
+  - name: open firewall port for docker daemon
     ufw: rule=allow port=2375
-  
+
   - name: start reload firewall
     ufw: state=enabled
 
@@ -22,18 +22,24 @@
 
   - name: update docker daemon configuration
     template: src=docker.j2 dest=/etc/default/docker
-    notify: restart docker daemon
-
+  
   - name: create directory for certificate
     file: state=directory path=/usr/local/share/ca-certificates/dev-docker-certs
 
   - name: copy registry private key
+    register: copy_result
     copy:
       content: '{{ ssl_certificate }}'
       dest: /usr/local/share/ca-certificates/dev-docker-certs/devdockerCA.crt
       owner: root
       group: root
       mode: 0644
-    notify: update ca certificates
+
+  - name: update ca certificates
+    command: update-ca-certificates
+    register: update_result
+    when: copy_result.changed
   
-  - meta: flush_handlers
+  - name: restart docker daemon
+    service: name=docker state=restarted enabled=yes
+    when: update_result.changed
