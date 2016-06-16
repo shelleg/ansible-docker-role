@@ -1,6 +1,7 @@
 ---
  
   - include_vars: vars/registrycrt.yml
+    when: secure_registry == True
 
   - name: enable ssh server in firewall
     ufw: rule=allow name=OpenSSH
@@ -28,6 +29,7 @@
 
   - name: copy registry private key
     register: copy_result
+    when: secure_registry == True
     copy:
       content: '{{ ssl_certificate }}'
       dest: /usr/local/share/ca-certificates/dev-docker-certs/devdockerCA.crt
