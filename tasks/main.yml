@@ -1,7 +1,7 @@
 ---
  
   - include_vars: vars/registrycrt.yml
-    when: secure_registry == True
+    when: secure_registry
 
   - name: enable ssh server in firewall
     ufw: rule=allow name=OpenSSH
@@ -21,15 +21,16 @@
   - name: install docker engine {{ docker_engine_version }} 
     apt: name="docker-engine={{ docker_engine_version }}-0~trusty" state=installed update_cache=yes
 
-  - name: update docker daemon configuration
+  - name: configure docker daemon configuration
     template: src=docker.j2 dest=/etc/default/docker
-  
+    notify: restart docker daemon
+ 
   - name: create directory for certificate
     file: state=directory path=/usr/local/share/ca-certificates/dev-docker-certs
 
   - name: copy registry private key
     register: copy_result
-    when: secure_registry == True
+    when: secure_registry
     copy:
       content: '{{ ssl_certificate }}'
       dest: /usr/local/share/ca-certificates/dev-docker-certs/devdockerCA.crt
@@ -39,9 +40,7 @@
 
   - name: update ca certificates
     command: update-ca-certificates
-    register: update_result
     when: copy_result.changed
-  
-  - name: restart docker daemon
-    service: name=docker state=restarted enabled=yes
-    when: update_result.changed
+    notify: restart docker daemon
+
+  - meta: flush_handlers
