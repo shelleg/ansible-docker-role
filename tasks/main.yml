@@ -1,7 +1,7 @@
 ---
  
   - include_vars: vars/registrycrt.yml
-    when: secure_registry
+    when: self_signed_registry
 
   - name: enable ssh server in firewall
     ufw: rule=allow name=OpenSSH
@@ -21,26 +21,40 @@
   - name: install docker engine {{ docker_engine_version }} 
     apt: name="docker-engine={{ docker_engine_version }}-0~trusty" state=installed update_cache=yes
 
+  - name: download ez_setup.py
+    get_url: url=https://bootstrap.pypa.io/ez_setup.py dest=/tmp/ez_setup.py
+
+  - name: stat easy_install file
+    stat: path=/usr/local/bin/easy_install
+    register: stat_result
+
+  - name: install python-setuptools
+    command: python /tmp/ez_setup.py
+    when: not stat_result.stat.exists
+
+  - name: install pip
+    easy_install: name=pip state=present
+
+  - name: install docker-py
+    pip: name=docker-py state=latest
+
   - name: configure docker daemon configuration
     template: src=docker.j2 dest=/etc/default/docker
     notify: restart docker daemon
  
   - name: create directory for certificate
-    file: state=directory path=/usr/local/share/ca-certificates/dev-docker-certs
+    file: state=directory path=/etc/docker/certs.d/{{ registry_dns_url }}
+    when: self_signed_registry
 
   - name: copy registry private key
     register: copy_result
-    when: secure_registry
+    when: self_signed_registry
+    notify: restart docker daemon
     copy:
       content: '{{ ssl_certificate }}'
-      dest: /usr/local/share/ca-certificates/dev-docker-certs/devdockerCA.crt
+      dest: /etc/docker/certs.d/{{ registry_dns_url }}/ca.crt
       owner: root
       group: root
       mode: 0644
-
-  - name: update ca certificates
-    command: update-ca-certificates
-    when: copy_result.changed
-    notify: restart docker daemon
 
   - meta: flush_handlers
